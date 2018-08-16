@@ -19,8 +19,8 @@ class addJoke extends Component {
       <div>
         {this.state.error && <p>{this.state.error}</p>}
         <form onSubmit={this.onFormSubmit}>
-          <input type="text" name="title" />
-          <input type="text" name="description"  />
+          <input type="text" name="title" onChange={this.props.changeName} />
+          <input type="text" name="description" onChange={this.props.changeDescription} />
           <button>Add Option</button>
         </form>
       </div>
