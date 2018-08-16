@@ -1,6 +1,5 @@
 import React, { Component } from 'react';
 import classes from './App.scss';
-import AddJoke from '../components/addJoke';
 import Input from "../components/Input";
 import Button from '../components/Button';
 
