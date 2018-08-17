@@ -16,17 +16,30 @@ class App extends Component {
           type: 'text',
           placeholder: 'Joke Title'
         },
-        value: ''
+        value: '',
+        validation: {
+          required: true
+        },
+        valid: false,
+        touched: false,
+        errorMessage: ''
       },
       description: {
-        elementType: 'input',
+        elementType: 'textarea',
         elementConfig: {
-          type: 'text',
+          rows: 4,
           placeholder: 'Your Joke'
         },
-        value: ''
-      },
-    }
+        value: '',
+        validation: {
+          required: true
+        },
+        valid: false,
+        touched: false,
+        errorMessage: ''
+      }
+    },
+    formIsValid: false
   }
 
   // addJoke = (joke) => {
@@ -54,6 +67,18 @@ class App extends Component {
       return { jokes: prevState.jokes.concat(formData) }})
   }
 
+  deleteJoke = (jokeToDelete) => {
+    this.setState((prevState) => ({
+      jokes: prevState.jokes.filter((joke) => {
+        return jokeToDelete !== joke;
+      })
+    }))
+  }
+
+  deleteAllJokes = () => {
+    this.setState(() => ({ jokes: [] }))
+  }
+
   inputChangeHandler = (event, inputIdentifier) => {
     const updatedJokeForm = {
       ...this.state.jokesForm
@@ -64,9 +89,64 @@ class App extends Component {
     };
 
     updatedFormElement.value = event.target.value;
+    updatedFormElement.valid = this.checkValidity(updatedFormElement.value, updatedFormElement.validation)
+    updatedFormElement.touched = true;
     updatedJokeForm[inputIdentifier] = updatedFormElement;
 
-    this.setState(() => ({ jokesForm: updatedJokeForm }));
+    let formIsValid = true;
+
+    for (let inputIdentifier in updatedJokeForm) {
+      // if both are true, the
+      formIsValid = updatedJokeForm[inputIdentifier].valid && formIsValid;
+      // console.log(updatedJokeForm);
+    }
+
+    this.setState(() => ({
+      jokesForm: updatedJokeForm,
+      formIsValid: formIsValid
+    }));
+    
+  }
+
+  checkValidity = (value, rules) => {
+
+    let isValid = true;
+    if (!rules) {
+      return true;
+    }
+    if (rules.required) {
+      isValid = value.trim() !== '' && isValid;
+    }
+    if (rules.minLength) {
+      isValid = value.length >= rules.minLength && isValid;
+    }
+
+    if (rules.maxLength) {
+      isValid = value.length <= rules.maxLength && isValid;
+    }
+    return isValid;
+  };
+
+  componentDidMount() {
+    try {
+      const json = localStorage.getItem("jokes");
+      const jokes = JSON.parse(json);
+
+      if(jokes) {
+        this.setState(() => ({ jokes }));
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  }
+  
+
+  componentDidUpdate(prevProps, prevState) {
+    if (prevState.jokes.length !== this.state.jokes.length) {
+      const json = JSON.stringify(this.state.jokes);
+      localStorage.setItem('jokes', json);
+      prevState.jokes.title = '';
+   }
   }
 
   render() {
@@ -74,8 +154,11 @@ class App extends Component {
     const viewJokes = jokes.map((joke) => {
       return (
         <div key={joke.title}>
-          <p>{joke.title}</p>
-          <p>{joke.description}</p>
+          <div>
+            <p>{joke.title}</p>
+            <p>{joke.description}</p>
+            <button onClick={() => this.deleteJoke(joke)}>Delete Joke</button>
+          </div>
        </div>
       )
     })
@@ -94,15 +177,19 @@ class App extends Component {
             elementType={formElement.config.elementType}
             elementConfig={formElement.config.elementConfig}
             value={formElement.config.value}
+            invalid={!formElement.config.valid}
+            shouldValidate={formElement.config.validation}
+            touched={formElement.config.touched}
             changed={(event) => this.inputChangeHandler(event, formElement.id)}
           />
         ))}
-        <Button btnType="Success"> Add Joke </Button>
+      <Button btnType="Success" disabled={!this.state.formIsValid}> Add Joke </Button>
       </form>;
     return (
       <div className={classes.FormData}>
         {form}
         {viewJokes}
+        <button onClick={this.deleteAllJokes}>Delete All Jokes</button>
       </div>
     );
   }
